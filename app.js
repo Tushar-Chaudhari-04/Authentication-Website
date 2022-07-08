@@ -1,6 +1,8 @@
 //jshint esversion:6
 //  All Packages are called to use.....
 
+require('dotenv').config()            //Environment Variable Secure by use of dotenv 
+
 const express=require("express");
 const bodyParser=require("body-parser");
 const ejs=require("ejs");
@@ -8,6 +10,8 @@ const mongoose=require("mongoose");
 const _=require("lodash");
 const encrypt=require("mongoose-encryption");
 const app=express();          // Initializing app to express....
+
+console.log(process.env.API_KEY);
 
 app.set('view engine','ejs'); //Views contain all html files  
 
@@ -24,9 +28,8 @@ const userSchema=new mongoose.Schema({
 });
 
 //Encryption For DB
-
-const secret="littleSecret.";
-userSchema.plugin(encrypt,{secret:secret,encryptedFields:["password"] });
+//Store Secret variables in environmeent file  -----------------> Must followed practice by Developer
+userSchema.plugin(encrypt,{secret:process.env.SECRET,encryptedFields:["password"] });
 
 
 const User=mongoose.model("User",userSchema);
@@ -47,10 +50,6 @@ app.get("/logout",function(req,res){
     res.render("home",{Msg:""});
 });
 
-
-// app.get("/secrets",function(req,res){
-//     res.render("secrets");
-// });
 
 app.post("/register",function(req,res){
     console.log(req.body.username);
@@ -93,162 +92,10 @@ app.post("/login",function(req,res){
 
 
 
-
-
 app.listen(3000,function(){
     console.log("Server started on port 3000");
 });
 
 
 
-//*******************************Commented Code****************************//
-/*
-
-// let port=process.env.PORT;
-
-// if(port==null || port==""){
-//     port=3000;
-// }
-// app.listen(port);
-
-
-const article1=new Article({                          // new Item1
-    title:"Web Dev",
-    content:"Angular/React Js and Java are requried"
-});
-
-const article2=new Article({                          // new Item2
-    title:"APP Dev",
-    content:"React Native,Andriod Studios are requried"
-});
-
-const defaultArray=[article1,article2];           // Array of items
-
-const listSchema=new mongoose.Schema({
-    name:String,
-    articles:[articleSchema]
-});
-
-const List=mongoose.model("Articles",listSchema);
-
-******************************************************************************************
-
-// const articleSchema=new mongoose.Schema({       // Defining Schema of Table
-//     title:String,
-//     content:String
-// });
-
-// const Article=mongoose.model("Article",articleSchema);  // Using Schema as model
-
-// /* ************************************Articles of WIKI CRUD Operations using app.route ***********************************************************/
-
-// app.route("/articles")
-// .get(function(req,res){                             // Get Data from DB
-//     Article.find({},function(err,foundArticles){
-//      if(!err){
-//          res.send(foundArticles);
-//      }
-//      else{
-//          res.send(err);
-//      }
-//     });
-//  })
-
-//  .post(function(req,res){                           // ADD Data to DB via POST Request
-//     const title=req.body.title;
-//     const content=req.body.content;
-    
-//     const article=new Article({                                    //Making obj of collection
-//         title:title,
-//         content:content
-//     });
-
-//     Article.findOne({title:title},function(err,foundItem){
-//         if(!err){
-//             if(foundItem){
-//                 res.send("Data already exits in DataBase.Please add new Data...");
-//             }
-//             else{
-//                 article.save(function(err,response){
-//                     if(!err){
-//                         res.send("Data added Successfully.... ");
-//                     }
-//                     else{
-//                         res.send(err);
-//                     }
-//                 });
-//             }
-//         }
-//     });
-// })
-
-// .delete(function(req,res){
-
-//     Article.deleteMany({title:req.body.title},function(err,response){
-//         if(!err){
-//             res.send("Data is deleted Succesfully");
-//         }
-//         else{
-//             res.send(err);
-//         }
-//     });
-// });
-
-// /* **********************Specific Articles of WIKI CRUD Operations using app.route("/articles/:params") ***********************************************************/
-
-// app.route("/articles/:articleTitle")                           //Specific get Item using ":params"
-// .get(function(req,res){
-//     Article.findOne({title:req.params.articleTitle},function(err,foundItem){
-//         if(!err){
-//             if(foundItem){
-//                 res.send(foundItem);
-//             }
-//            else{
-//             res.send("No Article found...");
-//            }
-//         }
-//         else{
-//             res.send(err);
-//         }
-//     });
-// })
-
-// .put(function(req,res){                                          //Update whole records
-//     Article.findOneAndUpdate({title:req.params.articleTitle},
-//         {title:req.body.title,
-//          content:req.body.content},
-//         {overwrite:true},
-//         function(err,results){
-//         if(!err){
-//             res.send("Updated Successfully....");
-//         }
-//         else{
-//             res.send("err");
-//         }
-//     });
-// })
-
-// .patch(function(req,res){                                          //update specific records 
-//     Article.updateOne({title:req.params.articleTitle},
-//         {$set:req.body},
-//         function(err,results){
-//         if(!err){
-//             res.send("Specific Record Updated ....");
-//         }
-//         else{
-//             res.send(err);
-//         }
-//     });
-// })
-
-// .delete(function(req,res){
-//     Article.deleteOne({title:req.params.articleTitle},function(err,results){
-//         if(!err){
-//             res.send("Article deleted successfuly");
-//         }
-//         else{
-//             res.send(err);
-//         }
-//     });
-// });
 
