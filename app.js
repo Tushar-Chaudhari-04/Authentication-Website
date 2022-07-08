@@ -6,7 +6,7 @@ const bodyParser=require("body-parser");
 const ejs=require("ejs");
 const mongoose=require("mongoose");
 const _=require("lodash");
-
+const encrypt=require("mongoose-encryption");
 const app=express();          // Initializing app to express....
 
 app.set('view engine','ejs'); //Views contain all html files  
@@ -23,6 +23,12 @@ const userSchema=new mongoose.Schema({
     userId:String,
     password:String
 });
+
+//Encryption For DB
+
+const secret="littleSecret.";
+userSchema.plugin(encrypt,{secret:secret,encryptedFields:["password"] });
+
 
 const User=mongoose.model("User",userSchema);
 
