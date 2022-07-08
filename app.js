@@ -16,7 +16,6 @@ app.use(express.static("public"));                  // public contain CSS files
 
 /* ************************* MongoDB Cloud Connection Setup  ***************/
 
-//mongoose.connect("mongodb+srv://Admin_Tango:test123@cluster0.ondmy.mongodb.net/wikiDB",{useNewURLParser:true});
 mongoose.connect("mongodb://localhost:27017/userDB",{useNewUrlParser:true});             //MongoDB Local Connection
 
 const userSchema=new mongoose.Schema({
