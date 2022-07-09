@@ -15,6 +15,8 @@ const saltRounds=10;
 const session=require("express-session");                             //Session package
 const passport=require("passport");                                   //Passport package
 const passportLocalMongoose=require("passport-local-mongoose");
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const findOrCreate = require('mongoose-findorcreate')
 
 const app=express();          // Initializing app to express....
 
@@ -40,7 +42,9 @@ mongoose.connect("mongodb://localhost:27017/userDB",{useNewUrlParser:true});    
 
 const userSchema=new mongoose.Schema({
     username:String,
-    password:String
+    password:String,
+    googleId:String,
+    secret:String
 });
 
 //Encryption For DB
@@ -48,19 +52,59 @@ const userSchema=new mongoose.Schema({
 // userSchema.plugin(encrypt,{secret:process.env.SECRET,encryptedFields:["password"] });
 
 userSchema.plugin(passportLocalMongoose);
+userSchema.plugin(findOrCreate);
 
 const User=mongoose.model("User",userSchema);
                               
 passport.use(User.createStrategy());                                //passport strategy started
                 
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+// passport.serializeUser(User.serializeUser());
+// passport.deserializeUser(User.deserializeUser());
+
+// used to serialize the user for the session
+passport.serializeUser(function(user, done) {
+    done(null, user.id); 
+   // where is this user.id going? Are we supposed to access this anywhere?
+});
+
+// used to deserialize the user
+passport.deserializeUser(function(id, done) {
+    User.findById(id, function(err, user) {
+        done(err, user);
+    });
+});
+
+
+passport.use(new GoogleStrategy({
+    clientID:process.env.CLIENT_ID,
+    clientSecret:process.env.CLIENT_SECRET,
+    callbackURL: "http://localhost:3000/auth/google/secrets",
+    // This option tells the strategy to use the userinfo endpoint instead
+    userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
+  },
+  function(accessToken, refreshToken, profile, cb) {
+    console.log(profile); 
+    User.findOrCreate({ googleId: profile.id }, function (err, user) {
+      return cb(err, user);
+    });
+  }
+));
 
 //Get Methods
 
 app.get("/",function(req,res){
     res.render("home",{Msg:""});
 });
+
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile'] }));
+
+app.get("/auth/google/secrets", 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect Secrets.
+    res.redirect('/secrets');
+  });
 
 app.get("/register",function(req,res){
     res.render("register");
@@ -71,13 +115,57 @@ app.get("/login",function(req,res){
 });
 
 app.get("/secrets",function(req,res){                 //allowing to navigate to secrets page on authentication
+   
+   User.find({secret:{$ne:null}},function(err,foundUsers){
     if(req.isAuthenticated()){
-        res.render("secrets",{Msg:""});
+        if(err){
+            console.log(err);
+        }else{
+            if(foundUsers){
+                res.render("secrets",{usersSecrets:foundUsers});
+            }
+        }
+    }else{
+        res.redirect("/");
+    }
+   
+   });
+   
+    // if(req.isAuthenticated()){
+    //     res.render("secrets",{Msg:""});
+    // }
+    // else{
+    //     res.redirect("/");
+    // }
+    
+});
+
+app.get("/submit",function(req,res){
+    if(req.isAuthenticated()){
+        res.render("submit");
     }
     else{
         res.redirect("/");
     }
-    
+});
+
+app.post("/submit",function(req,res){
+    const submittedSecret=req.body.secret;
+    console.log(submittedSecret);
+    console.log(req.user.id);
+
+    User.findById(req.user.id,function(err,foundUser){
+        if(err){
+            console.log(err);
+        }else{
+            if(foundUser){
+                foundUser.secret=submittedSecret;
+                foundUser.save();
+                res.redirect("/secrets");
+                console.log("reached");
+            }
+        }
+    });
 });
 
 app.get("/logout",function(req,res){
